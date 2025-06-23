@@ -134,10 +134,11 @@ export default function UsersTable() {
                         <table className="min-w-full border text-sm">
                             <thead className="sticky top-0 bg-gray-100 z-10">
                                 <tr>
+                                    <th className="px-4 py-2 border">No.</th>
                                     <th className="px-4 py-2 border">Name</th>
                                     <th className="px-4 py-2 border">Email</th>
                                     <th className="px-4 py-2 border">Points</th>
-                                    <th className="px-4 py-2 border">Created At</th>
+                                    <th className="px-4 py-2 border">Verified</th>
                                     <th className="px-4 py-2 border">Action</th>
                                 </tr>
                             </thead>
@@ -149,13 +150,16 @@ export default function UsersTable() {
                                 ) : (
                                     paginatedUsers.map((user, idx) => (
                                         <tr key={user.id} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50" + " hover:bg-blue-50 transition-colors"}>
+                                            <td className="px-4 py-2 border">{(page - 1) * rowsPerPage + idx + 1}</td>
                                             <td className="px-4 py-2 border">{user.displayName || '-'}</td>
                                             <td className="px-4 py-2 border">{user.email || '-'}</td>
                                             <td className="px-4 py-2 border">{user.points}</td>
                                             <td className="px-4 py-2 border">
-                                                {user.createdAt
-                                                    ? (user.createdAt.toDate ? user.createdAt.toDate().toLocaleString() : new Date(user.createdAt).toLocaleString())
-                                                    : '-'}
+                                                {user.isVerified ? (
+                                                    <span className="inline-block px-2 py-1 text-xs rounded bg-green-100 text-green-700 font-semibold">Verified</span>
+                                                ) : (
+                                                    <span className="inline-block px-2 py-1 text-xs rounded bg-gray-200 text-gray-600 font-semibold">Unverified</span>
+                                                )}
                                             </td>
                                             <td className="px-4 py-2 border text-center">
                                                 <button className="p-2 rounded hover:bg-blue-100 transition-colors" title="View Details" onClick={() => setSelectedUser(user)}>
