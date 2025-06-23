@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, User, LogOut, ArrowRightCircle, ArrowLeftCircle, Users as UsersIcon, LogOutIcon } from "lucide-react";
+import { LayoutDashboard, User, ArrowRightCircle, ArrowLeftCircle, Users as UsersIcon, LogOutIcon } from "lucide-react";
 import UsersTable from "./components/UsersTable";
 import ProfileCard from "./components/ProfileCard";
 
@@ -15,8 +15,6 @@ export default function DashboardPage() {
   const [reminderStats, setReminderStats] = useState<{ drink: number; notDrink: number } | null>(null);
   const [reminderStatsWeek, setReminderStatsWeek] = useState<{ drink: number; notDrink: number } | null>(null);
   const [reminderStatsMonth, setReminderStatsMonth] = useState<{ drink: number; notDrink: number } | null>(null);
-  const [editingProfile, setEditingProfile] = useState(false);
-  const [editForm, setEditForm] = useState<{ name: string; email: string }>({ name: '', email: '' });
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -38,7 +36,7 @@ export default function DashboardPage() {
         const usersCol = collection(db, "users");
         const usersSnapshot = await getDocs(usersCol);
         setTotalUsers(usersSnapshot.size);
-      } catch (err) {
+      } catch {
         setTotalUsers(null);
       }
     }
@@ -69,7 +67,7 @@ export default function DashboardPage() {
           else if (data.isDrink === false) notDrink++;
         });
         setReminderStats({ drink, notDrink });
-      } catch (err) {
+      } catch {
         setReminderStats(null);
       }
     }
@@ -103,7 +101,7 @@ export default function DashboardPage() {
           else if (data.isDrink === false) notDrink++;
         });
         setReminderStatsWeek({ drink, notDrink });
-      } catch (err) {
+      } catch {
         setReminderStatsWeek(null);
       }
     }
@@ -133,7 +131,7 @@ export default function DashboardPage() {
           else if (data.isDrink === false) notDrink++;
         });
         setReminderStatsMonth({ drink, notDrink });
-      } catch (err) {
+      } catch {
         setReminderStatsMonth(null);
       }
     }

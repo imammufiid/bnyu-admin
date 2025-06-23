@@ -53,8 +53,8 @@ export default function RegisterPage() {
       });
       setSuccess("Registration successful! You can now log in.");
       setForm({ name: "", email: "", password: "", confirm_password: "" });
-    } catch (err: any) {
-      setError(err.message || "Registration failed");
+    } catch (err: unknown) {
+      setError((err instanceof Error && err.message) ? err.message : "Registration failed");
     } finally {
       setLoading(false);
     }

@@ -1,12 +1,23 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Eye } from "lucide-react";
+import type { QueryDocumentSnapshot, DocumentData, Timestamp } from "firebase/firestore";
+
+interface User {
+  id: string;
+  displayName?: string;
+  email?: string;
+  points: number;
+  isVerified?: boolean;
+  createdAt?: Timestamp;
+  uid?: string;
+}
 
 export default function UsersTable() {
-    const [users, setUsers] = useState<any[]>([]);
+    const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [selectedUser, setSelectedUser] = useState<any | null>(null);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [reminderStats, setReminderStats] = useState<{ today: string; week: string; month: string } | null>(null);
     const [page, setPage] = useState(1);
     const rowsPerPage = 10;
@@ -41,7 +52,7 @@ export default function UsersTable() {
                 );
 
                 setUsers(usersData);
-            } catch (err: any) {
+            } catch {
                 setError("Failed to fetch users");
             } finally {
                 setLoading(false);
@@ -65,11 +76,12 @@ export default function UsersTable() {
             const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
             const startDayTs = Timestamp.fromDate(startOfDay);
             const endDayTs = Timestamp.fromDate(endOfDay);
+            if (!selectedUser) return;
             const qToday = query(remindersCol, where("userId", "==", selectedUser.uid), where("createdAt", ">=", startDayTs), where("createdAt", "<=", endDayTs));
             const snapToday = await getDocs(qToday);
             let drinkToday = 0, notDrinkToday = 0;
-            const todayReminders: any[] = [];
-            snapToday.forEach(doc => {
+            const todayReminders: { createdAt: unknown; isDrink: boolean }[] = [];
+            snapToday.forEach((doc: QueryDocumentSnapshot<DocumentData>) => {
                 const data = doc.data();
                 todayReminders.push({ createdAt: data.createdAt, isDrink: data.isDrink });
                 if (data.isDrink === true) drinkToday++;
@@ -85,11 +97,12 @@ export default function UsersTable() {
             endOfWeek.setHours(23, 59, 59, 999);
             const startWeekTs = Timestamp.fromDate(startOfWeek);
             const endWeekTs = Timestamp.fromDate(endOfWeek);
+            if (!selectedUser) return;
             const qWeek = query(remindersCol, where("userId", "==", selectedUser.uid), where("createdAt", ">=", startWeekTs), where("createdAt", "<=", endWeekTs));
             const snapWeek = await getDocs(qWeek);
             let drinkWeek = 0, notDrinkWeek = 0;
-            const weekReminders: any[] = [];
-            snapWeek.forEach(doc => {
+            const weekReminders: { createdAt: unknown; isDrink: boolean }[] = [];
+            snapWeek.forEach((doc: QueryDocumentSnapshot<DocumentData>) => {
                 const data = doc.data();
                 weekReminders.push({ createdAt: data.createdAt, isDrink: data.isDrink });
                 if (data.isDrink === true) drinkWeek++;
@@ -101,11 +114,12 @@ export default function UsersTable() {
             const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
             const startMonthTs = Timestamp.fromDate(startOfMonth);
             const endMonthTs = Timestamp.fromDate(endOfMonth);
+            if (!selectedUser) return;
             const qMonth = query(remindersCol, where("userId", "==", selectedUser.uid), where("createdAt", ">=", startMonthTs), where("createdAt", "<=", endMonthTs));
             const snapMonth = await getDocs(qMonth);
             let drinkMonth = 0, notDrinkMonth = 0;
-            const monthReminders: any[] = [];
-            snapMonth.forEach(doc => {
+            const monthReminders: { createdAt: unknown; isDrink: boolean }[] = [];
+            snapMonth.forEach((doc: QueryDocumentSnapshot<DocumentData>) => {
                 const data = doc.data();
                 monthReminders.push({ createdAt: data.createdAt, isDrink: data.isDrink });
                 if (data.isDrink === true) drinkMonth++;
@@ -213,7 +227,11 @@ export default function UsersTable() {
                                 <div className="text-gray-700 font-medium">Points: {selectedUser.points}</div>
                                 <div className="text-gray-400 text-xs">
                                     Created At: {selectedUser.createdAt
-                                        ? (selectedUser.createdAt.toDate ? selectedUser.createdAt.toDate().toLocaleString() : new Date(selectedUser.createdAt).toLocaleString())
+                                        ? (typeof selectedUser.createdAt === 'object' && selectedUser.createdAt !== null && 'toDate' in selectedUser.createdAt && typeof selectedUser.createdAt.toDate === 'function'
+                                            ? selectedUser.createdAt.toDate().toLocaleString()
+                                            : typeof selectedUser.createdAt === 'string'
+                                                ? selectedUser.createdAt
+                                                : '-')
                                         : '-'}
                                 </div>
                                 <div className="w-full mt-4">

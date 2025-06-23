@@ -46,8 +46,8 @@ export default function ProfileCard({ user, setUser }: ProfileCardProps) {
                 localStorage.setItem("user", JSON.stringify(editForm));
                 setSuccess("Profile updated successfully.");
                 setEditingProfile(false);
-              } catch (err: any) {
-                setError(err.message || "Failed to update profile");
+              } catch (err: unknown) {
+                setError((err instanceof Error && err.message) ? err.message : "Failed to update profile");
               } finally {
                 setLoading(false);
               }
