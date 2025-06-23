@@ -1,103 +1,266 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { LayoutDashboard, User, LogOut, ArrowRightCircle, ArrowLeftCircle, Users as UsersIcon, LogOutIcon } from "lucide-react";
+import UsersTable from "./components/UsersTable";
+import ProfileCard from "./components/ProfileCard";
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activePage, setActivePage] = useState<'dashboard' | 'profile' | 'users'>('dashboard');
+  const [totalUsers, setTotalUsers] = useState<number | null>(null);
+  const [reminderStats, setReminderStats] = useState<{ drink: number; notDrink: number } | null>(null);
+  const [reminderStatsWeek, setReminderStatsWeek] = useState<{ drink: number; notDrink: number } | null>(null);
+  const [reminderStatsMonth, setReminderStatsMonth] = useState<{ drink: number; notDrink: number } | null>(null);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [editForm, setEditForm] = useState<{ name: string; email: string }>({ name: '', email: '' });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isLoggedIn = localStorage.getItem("isLoggedIn");
+      if (isLoggedIn !== "true") {
+        router.replace("/login");
+      } else {
+        const userData = localStorage.getItem("user");
+        if (userData) {
+          setUser(JSON.parse(userData));
+        }
+      }
+    }
+    // Fetch total users
+    async function fetchTotalUsers() {
+      try {
+        const { collection, getDocs } = await import("firebase/firestore");
+        const { db } = await import("@/lib/firebase");
+        const usersCol = collection(db, "users");
+        const usersSnapshot = await getDocs(usersCol);
+        setTotalUsers(usersSnapshot.size);
+      } catch (err) {
+        setTotalUsers(null);
+      }
+    }
+    // Fetch reminders stats
+    async function fetchReminderStats() {
+      try {
+        const { collection, getDocs, query, where, Timestamp } = await import("firebase/firestore");
+        const { db } = await import("@/lib/firebase");
+        const remindersCol = collection(db, "reminders");
+        // Get start and end of today
+        const now = new Date();
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        const startTimestamp = Timestamp.fromDate(startOfDay);
+        const endTimestamp = Timestamp.fromDate(endOfDay);
+        // Query reminders created today
+        const remindersQuery = query(
+          remindersCol,
+          where("createdAt", ">=", startTimestamp),
+          where("createdAt", "<=", endTimestamp)
+        );
+        const remindersSnapshot = await getDocs(remindersQuery);
+        let drink = 0;
+        let notDrink = 0;
+        remindersSnapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.isDrink === true) drink++;
+          else if (data.isDrink === false) notDrink++;
+        });
+        setReminderStats({ drink, notDrink });
+      } catch (err) {
+        setReminderStats(null);
+      }
+    }
+    // Fetch reminders stats for week
+    async function fetchReminderStatsWeek() {
+      try {
+        const { collection, getDocs, query, where, Timestamp } = await import("firebase/firestore");
+        const { db } = await import("@/lib/firebase");
+        const remindersCol = collection(db, "reminders");
+        // Get start and end of current week (Monday to Sunday)
+        const now = new Date();
+        const day = now.getDay();
+        const diffToMonday = (day === 0 ? -6 : 1) - day; // Sunday is 0
+        const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday, 0, 0, 0, 0);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+        const startTimestamp = Timestamp.fromDate(startOfWeek);
+        const endTimestamp = Timestamp.fromDate(endOfWeek);
+        const remindersQuery = query(
+          remindersCol,
+          where("createdAt", ">=", startTimestamp),
+          where("createdAt", "<=", endTimestamp)
+        );
+        const remindersSnapshot = await getDocs(remindersQuery);
+        let drink = 0;
+        let notDrink = 0;
+        remindersSnapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.isDrink === true) drink++;
+          else if (data.isDrink === false) notDrink++;
+        });
+        setReminderStatsWeek({ drink, notDrink });
+      } catch (err) {
+        setReminderStatsWeek(null);
+      }
+    }
+    // Fetch reminders stats for month
+    async function fetchReminderStatsMonth() {
+      try {
+        const { collection, getDocs, query, where, Timestamp } = await import("firebase/firestore");
+        const { db } = await import("@/lib/firebase");
+        const remindersCol = collection(db, "reminders");
+        // Get start and end of current month
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        const startTimestamp = Timestamp.fromDate(startOfMonth);
+        const endTimestamp = Timestamp.fromDate(endOfMonth);
+        const remindersQuery = query(
+          remindersCol,
+          where("createdAt", ">=", startTimestamp),
+          where("createdAt", "<=", endTimestamp)
+        );
+        const remindersSnapshot = await getDocs(remindersQuery);
+        let drink = 0;
+        let notDrink = 0;
+        remindersSnapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.isDrink === true) drink++;
+          else if (data.isDrink === false) notDrink++;
+        });
+        setReminderStatsMonth({ drink, notDrink });
+      } catch (err) {
+        setReminderStatsMonth(null);
+      }
+    }
+    fetchTotalUsers();
+    fetchReminderStats();
+    fetchReminderStatsWeek();
+    fetchReminderStatsMonth();
+  }, [router]);
+
+  const handleLogout = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("isLoggedIn");
+      localStorage.removeItem("user");
+      router.replace("/login");
+    }
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar */}
+      <aside className={`transition-all duration-200 bg-white shadow-md flex flex-col p-6 ${sidebarOpen ? 'w-64' : 'w-24'} overflow-hidden`}>
+        <div className={`mb-8 flex items-center ${!sidebarOpen ? 'justify-center' : 'justify-between'}`}>
+          <div className="text-lg font-bold flex-1">{sidebarOpen ? 'BNYU' : <span className="flex items-center justify-center w-full">🛠️</span>}</div>
+          {sidebarOpen && (
+            <button
+              onClick={() => setSidebarOpen((open) => !open)}
+              className="p-2 rounded hover:bg-gray-200 ml-2"
+              aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+            >
+              <ArrowLeftCircle size={22} />
+            </button>
+          )}
+        </div>
+        <nav className="flex-1">
+          <ul className="space-y-2">
+            <li>
+              <button className="w-full flex items-center gap-2 text-left px-2 py-2 rounded hover:bg-gray-200 font-medium" onClick={() => setActivePage('dashboard')}>
+                <LayoutDashboard size={22} />
+                {sidebarOpen && 'Dashboard'}
+              </button>
+            </li>
+            <li>
+              <button className="w-full flex items-center gap-2 text-left px-2 py-2 rounded hover:bg-gray-200 font-medium" onClick={() => setActivePage('users')}>
+                <UsersIcon size={22} />
+                {sidebarOpen && 'Users'}
+              </button>
+            </li>
+            <li>
+              <button className="w-full flex items-center gap-2 text-left px-2 py-2 rounded hover:bg-gray-200 font-medium" onClick={() => setActivePage('profile')}>
+                <User size={22} />
+                {sidebarOpen && 'Profile'}
+              </button>
+            </li>
+            {!sidebarOpen && (
+              <li>
+                <button
+                  onClick={() => setSidebarOpen((open) => !open)}
+                  className="w-full flex items-center gap-2 text-left px-2 py-2 rounded hover:bg-gray-200 font-medium">
+                  <ArrowRightCircle size={22} />
+                </button>
+              </li>
+            )}
+          </ul>
+        </nav>
+        <button
+          onClick={handleLogout}
+          className={`mt-8 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 font-semibold flex gap-4`}
+        >
+          <LogOutIcon size={22} />
+          {sidebarOpen && 'Logout'}
+        </button>
+      </aside>
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col items-center justify-center w-full h-full p-8">
+        <div className="w-full max-w-3xl">
+          {activePage === 'dashboard' && (
+            <>
+              {/* Welcome Card */}
+              <div className="bg-white p-6 rounded-lg shadow flex items-center gap-6 mb-8">
+                <div className="flex-shrink-0 h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center text-2xl font-bold text-blue-600">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : "A"}
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold">Welcome, {user?.name || "Admin"}!</h2>
+                  <p className="text-gray-500 text-sm">{user?.email}</p>
+                </div>
+              </div>
+              {/* Quick Stats */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
+                <div className="bg-blue-50 p-4 rounded-lg shadow flex flex-col items-center">
+                  <div className="text-2xl font-bold text-blue-600 mb-1">{totalUsers !== null ? totalUsers : '--'}</div>
+                  <div className="text-gray-700">Total Users</div>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg shadow flex flex-col items-center">
+                  <div className="text-2xl font-bold text-green-600 mb-1">
+                    {reminderStats ? `${reminderStats.drink}/${reminderStats.notDrink}` : '--'}
+                  </div>
+                  <div className="text-gray-700">Active Reminders Today</div>
+                </div>
+                <div className="bg-yellow-50 p-4 rounded-lg shadow flex flex-col items-center">
+                  <div className="text-2xl font-bold text-yellow-600 mb-1">
+                    {reminderStatsWeek ? `${reminderStatsWeek.drink}/${reminderStatsWeek.notDrink}` : '--'}
+                  </div>
+                  <div className="text-gray-700">Active Reminders This Week</div>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg shadow flex flex-col items-center">
+                  <div className="text-2xl font-bold text-purple-600 mb-1">
+                    {reminderStatsMonth ? `${reminderStatsMonth.drink}/${reminderStatsMonth.notDrink}` : '--'}
+                  </div>
+                  <div className="text-gray-700">Active Reminders This Month</div>
+                </div>
+              </div>
+              {/* Recent Activity */}
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
+                <ul className="text-gray-500 text-sm space-y-2">
+                  <li>No recent activity yet.</li>
+                </ul>
+              </div>
+            </>
+          )}
+          {activePage === 'users' && <UsersTable />}
+          {activePage === 'profile' && user && (
+            <ProfileCard user={user} setUser={setUser} />
+          )}
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
