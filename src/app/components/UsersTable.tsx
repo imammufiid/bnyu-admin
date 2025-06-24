@@ -231,13 +231,13 @@ export default function UsersTable() {
             <div className="mb-4 flex flex-col sm:flex-row gap-2 w-full">
                 <input
                     type="text"
-                    className="border rounded px-3 py-2 w-full sm:w-64 bg-white"
+                    className="border rounded px-3 py-2 w-full sm:w-64 bg-white dark:bg-gray-800"
                     placeholder="Search"
                     value={search}
                     onChange={e => { setSearch(e.target.value); setPage(1); }}
                 />
             </div>
-            <div className="bg-white p-6 rounded-lg shadow w-full">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow w-full">
                 {loading ? (
                     <div>Loading...</div>
                 ) : error ? (
@@ -245,7 +245,7 @@ export default function UsersTable() {
                 ) : (
                     <div className="overflow-x-auto w-full">
                         <table className="min-w-full border text-sm w-full">
-                            <thead className="sticky top-0 bg-gray-100 z-10">
+                            <thead className="sticky top-0 bg-gray-100 dark:bg-gray-900 z-10">
                                 <tr>
                                     <th className="px-4 py-2 border cursor-pointer select-none" onClick={() => handleSort('no')}>
                                         No. {sortBy === 'no' && (sortDir === 'asc' ? '▲' : '▼')}
@@ -275,7 +275,7 @@ export default function UsersTable() {
                                     </tr>
                                 ) : (
                                     paginatedUsers.map((user, idx) => (
-                                        <tr key={user.id} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50" + " hover:bg-blue-50 transition-colors"}>
+                                        <tr key={user.id} className={idx % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-900" + " hover:bg-blue-50 dark:hover:bg-blue-900 transition-colors"}>
                                             <td className="px-4 py-2 border">{(page - 1) * rowsPerPage + idx + 1}</td>
                                             <td className="px-4 py-2 border">{user.displayName || '-'}</td>
                                             <td className="px-4 py-2 border">{user.email || '-'}</td>
@@ -330,8 +330,8 @@ export default function UsersTable() {
                 )}
                 {/* Modal for user detail */}
                 {selectedUser && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 backdrop-blur-md">
-                        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm relative">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 dark:bg-white/20 backdrop-blur-md">
+                        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 w-full max-w-sm relative">
                             <button
                                 className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-xl font-bold"
                                 onClick={() => setSelectedUser(null)}
@@ -358,15 +358,15 @@ export default function UsersTable() {
                                 <div className="w-full mt-4">
                                     <div className="font-semibold mb-2 text-sm text-gray-700">Active Reminders</div>
                                     <div className="flex flex-col sm:flex-row gap-2 mb-2">
-                                        <div className="flex-1 bg-green-50 rounded-lg p-3 flex flex-col items-center shadow">
+                                        <div className="flex-1 bg-green-50 dark:bg-green-900 rounded-lg p-3 flex flex-col items-center shadow">
                                             <div className="text-xs text-gray-500 mb-1">Today</div>
                                             <div className="text-lg font-bold text-green-600">{reminderStats ? reminderStats.today : '--'}</div>
                                         </div>
-                                        <div className="flex-1 bg-yellow-50 rounded-lg p-3 flex flex-col items-center shadow">
+                                        <div className="flex-1 bg-yellow-50 dark:bg-yellow-900 rounded-lg p-3 flex flex-col items-center shadow">
                                             <div className="text-xs text-gray-500 mb-1">This Week</div>
                                             <div className="text-lg font-bold text-yellow-600">{reminderStats ? reminderStats.week : '--'}</div>
                                         </div>
-                                        <div className="flex-1 bg-purple-50 rounded-lg p-3 flex flex-col items-center shadow">
+                                        <div className="flex-1 bg-purple-50 dark:bg-purple-900 rounded-lg p-3 flex flex-col items-center shadow">
                                             <div className="text-xs text-gray-500 mb-1">This Month</div>
                                             <div className="text-lg font-bold text-purple-600">{reminderStats ? reminderStats.month : '--'}</div>
                                         </div>

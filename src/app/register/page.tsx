@@ -67,7 +67,7 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <form className="bg-white p-8 rounded shadow-md w-full max-w-md space-y-2" onSubmit={handleSubmit}>
+      <form className="bg-white dark:bg-gray-800 p-8 rounded shadow-md w-full max-w-md space-y-2" onSubmit={handleSubmit}>
         <h1 className="text-2xl font-bold text-center">Register</h1>
         <div>
           <label htmlFor="name" className="block text-sm font-medium mb-1">Name</label>

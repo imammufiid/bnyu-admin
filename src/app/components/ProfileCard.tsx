@@ -16,7 +16,7 @@ export default function ProfileCard({ user, setUser }: ProfileCardProps) {
   const [success, setSuccess] = useState("");
 
   return (
-    <div className="bg-white p-8 rounded-lg shadow w-full max-w-md mx-auto text-center">
+    <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow w-full max-w-md mx-auto text-center">
       <h2 className="text-2xl font-bold mb-4">Profile</h2>
       <div className="flex flex-col items-center gap-4">
         <div className="h-20 w-20 rounded-full bg-blue-100 flex items-center justify-center text-3xl font-bold text-blue-600">
@@ -62,7 +62,7 @@ export default function ProfileCard({ user, setUser }: ProfileCardProps) {
               required
             />
             <input
-              className="border rounded px-3 py-2 bg-gray-100 cursor-not-allowed"
+              className="border rounded px-3 py-2 bg-gray-100 dark:bg-gray-900 cursor-not-allowed"
               type="email"
               value={editForm.email}
               disabled

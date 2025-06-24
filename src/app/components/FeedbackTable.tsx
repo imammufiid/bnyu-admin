@@ -70,7 +70,7 @@ export default function FeedbackTable() {
   return (
     <div className="w-full">
       <h2 className="text-2xl font-bold mb-4">Feedback</h2>
-      <div className="bg-white p-6 rounded-lg shadow w-full">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow w-full">
         {loading ? (
           <div>Loading...</div>
         ) : error ? (
@@ -78,7 +78,7 @@ export default function FeedbackTable() {
         ) : (
           <div className="overflow-x-auto w-full">
             <table className="min-w-full border text-sm w-full">
-              <thead className="sticky top-0 bg-gray-100 z-10">
+              <thead className="sticky top-0 bg-gray-100 dark:bg-gray-900 z-10">
                 <tr>
                   <th className="px-4 py-2 border">No.</th>
                   <th className="px-4 py-2 border">User Email</th>
@@ -94,7 +94,7 @@ export default function FeedbackTable() {
                   </tr>
                 ) : (
                   feedbacks.map((fb, idx) => (
-                    <tr key={fb.id} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50" + " hover:bg-blue-50 transition-colors"}>
+                    <tr key={fb.id} className={idx % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-900" + " hover:bg-blue-50 dark:hover:bg-blue-900 transition-colors"}>
                       <td className="px-4 py-2 border">{idx + 1}</td>
                       <td className="px-4 py-2 border">{fb.email || '-'}</td>
                       <td className="px-4 py-2 border">{fb.feedback}</td>
@@ -118,8 +118,8 @@ export default function FeedbackTable() {
       </div>
       {/* Modal for feedback detail */}
       {selectedFeedback && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 backdrop-blur-md">
-          <div className="bg-white rounded-lg shadow-lg p-10 w-full max-w-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 dark:bg-white/20 backdrop-blur-md">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-10 w-full max-w-2xl relative">
             <button
               className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-xl font-bold"
               onClick={() => setSelectedFeedback(null)}
