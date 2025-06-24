@@ -11,6 +11,7 @@ interface User {
   isVerified?: boolean;
   createdAt?: Timestamp;
   uid?: string;
+  lastActive?: Timestamp | string;
 }
 
 export default function UsersTable() {
@@ -21,8 +22,19 @@ export default function UsersTable() {
     const [reminderStats, setReminderStats] = useState<{ today: string; week: string; month: string } | null>(null);
     const [page, setPage] = useState(1);
     const rowsPerPage = 10;
-    const totalPages = Math.ceil(users.length / rowsPerPage);
-    const paginatedUsers = users.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+    const [search, setSearch] = useState("");
+    const [sortBy, setSortBy] = useState<'no' | 'displayName' | 'email' | 'points' | 'isVerified' | 'lastActive'>('no');
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+    function handleSort(col: typeof sortBy) {
+        if (sortBy === col) {
+            setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortBy(col);
+            setSortDir('asc');
+        }
+        setPage(1);
+    }
 
     useEffect(() => {
         async function fetchUsers() {
@@ -47,7 +59,23 @@ export default function UsersTable() {
                             // Use only the first points document's value
                             points = pointsSnapshot.docs[0].data().points || 0;
                         }
-                        return { ...user, points };
+                        // Fetch last active (latest reminder)
+                        const remindersCol = collection(db, "reminders");
+                        const remindersQuery = query(remindersCol, where("userId", "==", user.id));
+                        const remindersSnapshot = await getDocs(remindersQuery);
+                        let lastActive: Timestamp | string | undefined = undefined;
+                        if (!remindersSnapshot.empty) {
+                            const latest = remindersSnapshot.docs.reduce((a, b) => {
+                                const aDate = a.data().createdAt;
+                                const bDate = b.data().createdAt;
+                                if (aDate && bDate) {
+                                    return (aDate.seconds || 0) > (bDate.seconds || 0) ? a : b;
+                                }
+                                return a;
+                            });
+                            lastActive = latest.data().createdAt;
+                        }
+                        return { ...user, points, lastActive };
                     })
                 );
 
@@ -135,24 +163,111 @@ export default function UsersTable() {
         fetchUserReminderStats();
     }, [selectedUser]);
 
+    function formatDate(date: Date): string {
+        const now = new Date();
+        const isToday = date.toDateString() === now.toDateString();
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        const isYesterday = date.toDateString() === yesterday.toDateString();
+        const time = date.toLocaleTimeString([], { hour12: false });
+        if (isToday) return `Today, at ${time}`;
+        if (isYesterday) return `Yesterday, at ${time}`;
+        return `${date.getDate().toString().padStart(2, '0')} ${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}, ${time}`;
+    }
+
+    // Filter users by search
+    const filteredUsers = users.filter(user => {
+        const q = search.toLowerCase();
+        return (
+            (user.displayName && user.displayName.toLowerCase().includes(q)) ||
+            (user.email && user.email.toLowerCase().includes(q))
+        );
+    });
+
+    // Sort users by selected column and direction
+    const sortedUsers = [...filteredUsers].sort((a, b) => {
+        let aVal: any, bVal: any;
+        switch (sortBy) {
+            case 'no':
+                aVal = a;
+                bVal = b;
+                break;
+            case 'displayName':
+                aVal = a.displayName || '';
+                bVal = b.displayName || '';
+                break;
+            case 'email':
+                aVal = a.email || '';
+                bVal = b.email || '';
+                break;
+            case 'points':
+                aVal = a.points || 0;
+                bVal = b.points || 0;
+                break;
+            case 'isVerified':
+                aVal = a.isVerified ? 1 : 0;
+                bVal = b.isVerified ? 1 : 0;
+                break;
+            case 'lastActive':
+                aVal = a.lastActive && typeof a.lastActive === 'object' && a.lastActive !== null && 'toDate' in a.lastActive && typeof a.lastActive.toDate === 'function'
+                    ? a.lastActive.toDate().getTime()
+                    : 0;
+                bVal = b.lastActive && typeof b.lastActive === 'object' && b.lastActive !== null && 'toDate' in b.lastActive && typeof b.lastActive.toDate === 'function'
+                    ? b.lastActive.toDate().getTime()
+                    : 0;
+                break;
+            default:
+                aVal = a;
+                bVal = b;
+        }
+        if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    const paginatedUsers = sortedUsers.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+    const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
+
     return (
-        <div>
+        <div className="w-full">
             <h2 className="text-2xl font-bold mb-4">Users</h2>
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="mb-4 flex flex-col sm:flex-row gap-2 w-full">
+                <input
+                    type="text"
+                    className="border rounded px-3 py-2 w-full sm:w-64 bg-white"
+                    placeholder="Search"
+                    value={search}
+                    onChange={e => { setSearch(e.target.value); setPage(1); }}
+                />
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow w-full">
                 {loading ? (
                     <div>Loading...</div>
                 ) : error ? (
                     <div className="text-red-600">{error}</div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full border text-sm">
+                    <div className="overflow-x-auto w-full">
+                        <table className="min-w-full border text-sm w-full">
                             <thead className="sticky top-0 bg-gray-100 z-10">
                                 <tr>
-                                    <th className="px-4 py-2 border">No.</th>
-                                    <th className="px-4 py-2 border">Name</th>
-                                    <th className="px-4 py-2 border">Email</th>
-                                    <th className="px-4 py-2 border">Points</th>
-                                    <th className="px-4 py-2 border">Verified</th>
+                                    <th className="px-4 py-2 border cursor-pointer select-none" onClick={() => handleSort('no')}>
+                                        No. {sortBy === 'no' && (sortDir === 'asc' ? '▲' : '▼')}
+                                    </th>
+                                    <th className="px-4 py-2 border cursor-pointer select-none" onClick={() => handleSort('displayName')}>
+                                        Name {sortBy === 'displayName' && (sortDir === 'asc' ? '▲' : '▼')}
+                                    </th>
+                                    <th className="px-4 py-2 border cursor-pointer select-none" onClick={() => handleSort('email')}>
+                                        Email {sortBy === 'email' && (sortDir === 'asc' ? '▲' : '▼')}
+                                    </th>
+                                    <th className="px-4 py-2 border cursor-pointer select-none" onClick={() => handleSort('points')}>
+                                        Points {sortBy === 'points' && (sortDir === 'asc' ? '▲' : '▼')}
+                                    </th>
+                                    <th className="px-4 py-2 border cursor-pointer select-none" onClick={() => handleSort('isVerified')}>
+                                        Verified {sortBy === 'isVerified' && (sortDir === 'asc' ? '▲' : '▼')}
+                                    </th>
+                                    <th className="px-4 py-2 border cursor-pointer select-none" onClick={() => handleSort('lastActive')}>
+                                        Last Active {sortBy === 'lastActive' && (sortDir === 'asc' ? '▲' : '▼')}
+                                    </th>
                                     <th className="px-4 py-2 border">Action</th>
                                 </tr>
                             </thead>
@@ -174,6 +289,15 @@ export default function UsersTable() {
                                                 ) : (
                                                     <span className="inline-block px-2 py-1 text-xs rounded bg-gray-200 text-gray-600 font-semibold">Unverified</span>
                                                 )}
+                                            </td>
+                                            <td className="px-4 py-2 border">
+                                                {user.lastActive
+                                                    ? (typeof user.lastActive === 'object' && user.lastActive !== null && 'toDate' in user.lastActive && typeof user.lastActive.toDate === 'function'
+                                                        ? formatDate(user.lastActive.toDate())
+                                                        : typeof user.lastActive === 'string'
+                                                            ? user.lastActive
+                                                            : '-')
+                                                    : '-'}
                                             </td>
                                             <td className="px-4 py-2 border text-center">
                                                 <button className="p-2 rounded hover:bg-blue-100 transition-colors" title="View Details" onClick={() => setSelectedUser(user)}>
@@ -228,7 +352,7 @@ export default function UsersTable() {
                                 <div className="text-gray-400 text-xs">
                                     Created At: {selectedUser.createdAt
                                         ? (typeof selectedUser.createdAt === 'object' && selectedUser.createdAt !== null && 'toDate' in selectedUser.createdAt && typeof selectedUser.createdAt.toDate === 'function'
-                                            ? selectedUser.createdAt.toDate().toLocaleString()
+                                            ? formatDate(selectedUser.createdAt.toDate())
                                             : typeof selectedUser.createdAt === 'string'
                                                 ? selectedUser.createdAt
                                                 : '-')

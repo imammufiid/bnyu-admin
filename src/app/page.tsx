@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, User, ArrowRightCircle, ArrowLeftCircle, Users as UsersIcon, LogOutIcon } from "lucide-react";
+import { LayoutDashboard, User, ArrowRightCircle, ArrowLeftCircle, Users as UsersIcon, LogOutIcon, MessageSquare } from "lucide-react";
 import UsersTable from "./components/UsersTable";
 import ProfileCard from "./components/ProfileCard";
+import FeedbackTable from "./components/FeedbackTable";
 
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activePage, setActivePage] = useState<'dashboard' | 'profile' | 'users'>('dashboard');
+  const [activePage, setActivePage] = useState<'dashboard' | 'profile' | 'users' | 'feedback'>('dashboard');
   const [totalUsers, setTotalUsers] = useState<number | null>(null);
   const [reminderStats, setReminderStats] = useState<{ drink: number; notDrink: number } | null>(null);
   const [reminderStatsWeek, setReminderStatsWeek] = useState<{ drink: number; notDrink: number } | null>(null);
@@ -180,6 +181,12 @@ export default function DashboardPage() {
               </button>
             </li>
             <li>
+              <button className="w-full flex items-center gap-2 text-left px-2 py-2 rounded hover:bg-gray-200 font-medium" onClick={() => setActivePage('feedback')}>
+                <MessageSquare size={22} />
+                {sidebarOpen && 'Feedback'}
+              </button>
+            </li>
+            <li>
               <button className="w-full flex items-center gap-2 text-left px-2 py-2 rounded hover:bg-gray-200 font-medium" onClick={() => setActivePage('profile')}>
                 <User size={22} />
                 {sidebarOpen && 'Profile'}
@@ -206,7 +213,7 @@ export default function DashboardPage() {
       </aside>
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center justify-center w-full h-full p-8">
-        <div className="w-full max-w-3xl">
+        <div className="w-full">
           {activePage === 'dashboard' && (
             <>
               {/* Welcome Card */}
@@ -257,6 +264,7 @@ export default function DashboardPage() {
           {activePage === 'profile' && user && (
             <ProfileCard user={user} setUser={setUser} />
           )}
+          {activePage === 'feedback' && <FeedbackTable />}
         </div>
       </main>
     </div>
