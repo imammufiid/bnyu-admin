@@ -186,11 +186,11 @@ export default function UsersTable() {
 
     // Sort users by selected column and direction
     const sortedUsers = [...filteredUsers].sort((a, b) => {
-        let aVal: any, bVal: any;
+        let aVal: number | string, bVal: number | string;
         switch (sortBy) {
             case 'no':
-                aVal = a;
-                bVal = b;
+                aVal = users.indexOf(a) + 1;
+                bVal = users.indexOf(b) + 1;
                 break;
             case 'displayName':
                 aVal = a.displayName || '';
@@ -216,12 +216,9 @@ export default function UsersTable() {
                     ? b.lastActive.toDate().getTime()
                     : 0;
                 break;
-            default:
-                aVal = a;
-                bVal = b;
         }
-        if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
-        if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+        if ((aVal as number | string) < (bVal as number | string)) return sortDir === 'asc' ? -1 : 1;
+        if ((aVal as number | string) > (bVal as number | string)) return sortDir === 'asc' ? 1 : -1;
         return 0;
     });
 
